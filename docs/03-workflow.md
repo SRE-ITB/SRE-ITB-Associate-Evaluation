@@ -1,6 +1,6 @@
 # 03 Workflow
 
-Lightweight on purpose: 4 people, one Apps Script project, no CI.
+Lightweight on purpose: 5 people, one Apps Script project, no CI.
 
 ## 1. Environments
 
@@ -28,7 +28,7 @@ read work order (tasks/<ID>.md) + docs/00-scope.md
   -> clasp push            (to your DEV copy)
   -> test every "Done =" item in your DEV copy, take screenshots
   -> commit, push branch, open PR with the template
-  -> review by the other dev (24h) -> approval by lead (24h)
+  -> review by the dev named as Reviewer in the work order (24h) -> approval by lead (24h)
   -> lead squash-merges into main
   -> lead runs clasp push to PROD (batched, not after every merge)
 ```
@@ -59,5 +59,6 @@ read work order (tasks/<ID>.md) + docs/00-scope.md
 ## 7. Communication
 
 - Async standup in the group chat on workdays: done / next / blocked.
+- Weekly checkpoint meeting, 30 minutes, dates and pass conditions in `docs/02-assignments.md`.
 - Blocked more than 4 hours: tag the lead.
 - Decisions that change scope, rules, or structure go to `DECISIONS.md` via PR. Business rule changes go to the PRD first.

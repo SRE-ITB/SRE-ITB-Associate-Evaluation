@@ -1,6 +1,6 @@
 # 00 Scope and Business Rules
 
-Source of truth for business rules: the PRD (Claude Docs, Indonesian), version as of 2026-11-09.
+Source of truth for business rules: the PRD (Google Docs, Indonesian), version as of 2026-11-09: https://docs.google.com/document/d/19LpI_MYgcKYfxZ3E3Sel0GvFbCnTydWbp6E6Jx0zAPc/edit
 This file is the technical translation. If the two disagree, the PRD wins: raise it with the lead, update the PRD first, then this file and `DECISIONS.md`.
 
 ## 1. In scope
