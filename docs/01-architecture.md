@@ -178,11 +178,13 @@ Container-bound to the spreadsheet. Runtime V8, `timeZone: Asia/Jakarta` in `app
 | `Menu.gs` | Lead | `onOpen` custom menu `SRE Tools` |
 | `Triggers.gs` | Lead | `installTriggers()`, `removeTriggers()` |
 | `Evaluations.gs` | Dev A | `onFormSubmitHandler`, `onEditHandler`, `openPeriod()` |
-| `Reports.gs` | Dev A | `generateReports(periodId)` |
+| `Reports.gs` | Dev C | `generateReports(periodId)` |
 | `FormSync.gs` | Dev B | `syncForm()` |
 | `Posters.gs` | Dev B | shared Slides-to-PNG helper |
 | `Birthday.gs` | Dev B | `dailyBirthday()` |
 | `BestStaffPoster.gs` | Dev B | `generateBestStaffPosters(periodId)` |
+
+Sheet formulas also have owners: the `Summary` formulas (section 2.5) are owned by Dev A, the `Leaderboard` formulas (section 2.6) by Dev C.
 
 Devs add their menu entries by editing `Menu.gs` in their PR. The lead reviews that change.
 

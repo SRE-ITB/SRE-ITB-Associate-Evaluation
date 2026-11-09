@@ -4,7 +4,7 @@ Quarterly staff evaluation for SRE ITB, requested by the Organizational Manageme
 Built on Google Form + Google Sheets + Apps Script. No website, no paid tools.
 
 Business requirements live in the PRD (Indonesian, approved by OM):
-https://claude.ai/code/artifact/f995514e-3541-48df-a8a4-8f6b0f941caa
+https://docs.google.com/document/d/19LpI_MYgcKYfxZ3E3Sel0GvFbCnTydWbp6E6Jx0zAPc/edit
 
 This repo holds the Apps Script source and the technical docs derived from the PRD.
 
@@ -26,7 +26,7 @@ This repo holds the Apps Script source and the technical docs derived from the P
 ├── docs/
 │   ├── 00-scope.md            business rules, technical translation of the PRD
 │   ├── 01-architecture.md     sheets, form, scripts, triggers, formulas
-│   ├── 02-assignments.md      who owns what, timeline, dependencies
+│   ├── 02-assignments.md      who owns what, weekly checkpoints, dependencies
 │   ├── 03-workflow.md         clasp, branches, commits, PR, deploy
 │   └── 04-work-order-template.md
 ├── tasks/                     one work order per task
