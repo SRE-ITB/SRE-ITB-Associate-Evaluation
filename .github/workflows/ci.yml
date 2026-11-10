@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: node --check every src/*.gs
+        run: |
+          shopt -s nullglob
+          mkdir -p "$RUNNER_TEMP/gs"
+          for f in src/*.gs; do
+            out="$RUNNER_TEMP/gs/$(basename "$f" .gs).js"
+            cp "$f" "$out"
+            node --check "$out" || { echo "::error file=$f::Syntax error"; exit 1; }
+          done
+          echo "Syntax OK."
+
+  guardrails:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash .github/scripts/guardrails.sh
+
+  boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: bash .github/scripts/boundary.sh "$HEAD_REF" "origin/$BASE_REF"
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+
+  pr-hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conventional Commit title and branch name
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          failed=0
+          if ! printf '%s' "$TITLE" | grep -qE '^(feat|fix|docs|refactor|chore)(\([A-Z]-[0-9]{2}\))?: .+'; then
+            echo "::error::PR title '$TITLE' must look like 'feat(A-01): short summary' (docs/03-workflow.md section 4)."
+            failed=1
+          fi
+          if ! printf '%s' "$HEAD_REF" | grep -qE '^((feat|fix)/[A-Z]-[0-9]{2}-[a-z0-9-]+|docs/[a-z0-9-]+)$'; then
+            echo "::error::Branch '$HEAD_REF' must be feat/<ID>-<slug>, fix/<ID>-<slug>, or docs/<slug>."
+            failed=1
+          fi
+          exit $failed
+
+  proof-of-work:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: No PROOF-PENDING left in the PR description
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if ! git diff --name-only "origin/$BASE_REF"...HEAD | grep -q '^src/'; then
+            echo "No file under src/ changed. Proof of work not required."
+            exit 0
+          fi
+          # Only visible text counts; the template's HTML comments mention the token.
+          visible=$(printf '%s' "$PR_BODY" | perl -0pe 's/<!--.*?-->//gs')
+          if printf '%s' "$visible" | grep -n 'PROOF-PENDING'; then
+            echo "::error::Replace every PROOF-PENDING with a screenshot you captured in your DEV copy."
+            exit 1
+          fi
+          echo "Proof of work complete."
