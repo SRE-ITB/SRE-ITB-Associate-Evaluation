@@ -1,0 +1,16 @@
+# clasp: local only, one per environment
+.clasp.json
+.clasp.prod.json
+.clasprc.json
+
+# Never commit staff data exports
+*.csv
+*.xlsx
+data/
+
+# Local references, not part of this repo
+information-oskm-2026/
+Spesifikasi*.md
+
+node_modules/
+.DS_Store
