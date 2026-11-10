@@ -8,13 +8,13 @@ This file is the technical translation. If the two disagree, the PRD wins: raise
 - Staff evaluation in 13 evaluation groups (see section 3).
 - Final score, Red Notice, Best Staff, leaderboard, and progress per period.
 - Report card PDF per staff per period.
-- Daily birthday poster + email to OM.
+- Daily birthday poster + email to OM, for every active SRE member, including members who are not evaluated (D-032).
 - Best Staff poster per division per period.
 
 ## 2. Out of scope
 
 - Evaluating Kadiv/Wakadiv (done by department heads outside this system).
-- Units under General Secretariat (Secretary, Treasurer, Permit & Authorization).
+- Evaluating units under General Secretariat (Secretary, Treasurer, Permit & Authorization). They still get birthday posters.
 - President/VP voting.
 - Staff login to view their own report card. Reports are distributed by OM.
 - An app-style leaderboard. The leaderboard is a sheet tab.
@@ -126,7 +126,7 @@ Use these as test fixtures.
 
 ## 11. Birthday poster
 
-- Checked daily in the morning (Asia/Jakarta) for active staff in `Master`.
+- Checked daily in the morning (Asia/Jakarta) for every active member in `Master` (`active = TRUE`), whether or not `evaluated` is TRUE. This includes Kadiv/Wakadiv and General Secretariat units (D-032).
 - Feb 29 birthdays are celebrated on Feb 28 in non-leap years.
 - One poster per staff saved to Drive, then one summary email per day to all OM members (list in `Config`).
 - Never send twice for the same staff on the same date (`BirthdayLog`).
