@@ -1,6 +1,6 @@
 # 03 Workflow
 
-Lightweight on purpose: 5 people, one Apps Script project, no CI.
+Lightweight on purpose: 5 people, one Apps Script project, a small CI that only checks rules (D-029).
 
 ## 1. Environments
 
@@ -18,6 +18,7 @@ Never test against PROD. Never put real staff data in DEV.
 3. `clasp login`.
 4. Clone the repo. Copy `.clasp.example.json` to `.clasp.json` and set `scriptId` to your DEV copy (Extensions > Apps Script > Project Settings > Script ID).
 5. `.clasp.json` is gitignored. Do not commit it.
+6. `clasp push`, then in your DEV spreadsheet fill the `Config` tab with `ENV = DEV` and run, from the Apps Script editor: `setupSheets()`, `seedFakeData()`, `setupForm()`. Running them again is safe.
 
 ## 3. Flow for one task
 
@@ -47,14 +48,28 @@ read work order (tasks/<ID>.md) + docs/00-scope.md
 - If you changed spreadsheet formulas, protections, or Form fields, describe the change in the PR and update `docs/01-architecture.md` in the same PR. These live outside git, so the doc is their only record.
 - Reviewer checks: matches the work order, stays inside its boundary, follows `docs/01-architecture.md` section 4.1, no hardcoded IDs or personal data.
 
+### 5.1 CI checks
+
+Every PR to `main` runs `.github/workflows/ci.yml`. All checks must pass before merge.
+
+| Check | Fails when |
+| --- | --- |
+| `syntax` | A `src/*.gs` file has a JavaScript syntax error |
+| `guardrails` | `src/` has `import`/`export`, a string that looks like a Drive ID, or an email address. `.clasp.json` is committed. `appsscript.json` is not `Asia/Jakarta` + `V8` |
+| `boundary` | A `feat/<ID>-*` or `fix/<ID>-*` branch changes a file not listed under `Files` in `tasks/<ID>.md` (`docs/01-architecture.md` and `tasks/<ID>.md` are always allowed) |
+| `pr-hygiene` | PR title is not a Conventional Commit, or the branch name does not follow section 4 |
+| `proof-of-work` | The PR description still contains `PROOF-PENDING`. Docs-only PRs write "docs only" under Proof instead |
+
+CI cannot check Apps Script behavior. The `Done =` screenshots remain the real test.
+
 ## 6. Deploying to PROD (lead)
 
+Keep `.clasp.prod.json` (PROD script ID, gitignored) next to `.clasp.json`. Never store org account credentials in GitHub (D-029).
+
 1. `git switch main && git pull`.
-2. Point `.clasp.json` to the PROD script ID (keep a separate local file, for example `.clasp.prod.json`, and copy it in).
-3. `clasp push`.
-4. Apply any sheet or Form changes listed in merged PRs by hand.
-5. Smoke test: one Form submission with a test row, then delete that row.
-6. Switch `.clasp.json` back to your DEV copy.
+2. `scripts/deploy-prod.sh`. It refuses to run unless you are on `main`, the tree is clean, and `main` equals `origin/main`. It pushes with `.clasp.prod.json` and leaves `.clasp.json` pointing at your DEV copy. It creates a local tag `prod-YYYYMMDD-HHMM` and prints the command to push it.
+3. Apply any sheet or Form changes listed in merged PRs by hand.
+4. Smoke test: one Form submission with a test row, then delete that row.
 
 ## 7. Communication
 

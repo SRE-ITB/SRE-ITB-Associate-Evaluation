@@ -46,11 +46,11 @@ Folder and template IDs go in `Config`, never in code.
 | `BirthdayLog` | Prevents duplicate birthday sends | locked |
 | `Rejected` | Submissions from emails not in `Admins` | view |
 
-Protected ranges are set by the lead (L-03). Only the org account and the lead can edit locked ranges.
+Protected ranges are set by the lead with `setupProtections()` (L-03). Only the org account and `LEAD_EMAIL` can edit locked ranges. Scripts run from the menu run as the admin who clicks, so any menu action that writes to a locked tab (for example `openPeriod`) must be run by the lead or the org account.
 
 ### 2.1 `Config`
 
-Key/value block (column A key, column B value):
+Key/value block (column A key, column B value, header row `key | value`). `setupSheets()` adds any missing key:
 
 | Key | Example | Used by |
 | --- | --- | --- |
@@ -62,9 +62,11 @@ Key/value block (column A key, column B value):
 | `TEMPLATE_BIRTHDAY` | Slides ID | Birthday |
 | `TEMPLATE_BEST_STAFF` | Slides ID | BestStaffPoster |
 | `TEMPLATE_REPORT` | Docs ID | Reports |
-| `FORM_ID` | Form ID | FormSync |
+| `FORM_ID` | Form ID | FormSync, Setup |
+| `ENV` | `DEV` or `PROD` | Setup (`seedFakeData` runs only in `DEV`) |
+| `LEAD_EMAIL` | lead's email | Setup (editor of protected ranges) |
 
-Periods table (named range `PERIODS`): `period_id | label | start_date | end_date`. Example row: `P1 | Dec 2026 - Feb 2027 | 2026-12-01 | 2027-02-28`.
+Periods table at `Config!D1:G1` headers, data in named range `PERIODS` = `Config!D2:G50`: `period_id | label | start_date | end_date`. Example row: `P1 | Dec 2026 - Feb 2027 | 2026-12-01 | 2027-02-28`.
 
 ### 2.2 `Master`
 
@@ -132,11 +134,13 @@ M2  =AND(E2, F2)
 
 `kw_i1` and `om_i1` are lookups on `Evaluations` filtered by period, nim, role, and flag. Status order follows `docs/00-scope.md` section 8.
 
+`tie_override` is a checkbox in the template row (A-02), not a column-wide validation: empty checkboxes hold FALSE and would make `getLastRow()` count every row.
+
 Formulas live in the spreadsheet, not in git. Any change to them must be reflected in this file in the same PR.
 
 ### 2.6 `Leaderboard`
 
-A period selector cell (dropdown from `PERIODS`) and one block per division using `SORT(FILTER(Summary...))` by `final_total` descending, showing name, total, average, status.
+A period selector cell at `Leaderboard!B1` (dropdown from `PERIODS`, the only admin-editable cell, constant `LEADERBOARD_PERIOD_SELECTOR_A1`) and one block per division using `SORT(FILTER(Summary...))` by `final_total` descending, showing name, total, average, status.
 
 ### 2.7 `BirthdayLog`
 
@@ -177,6 +181,7 @@ Container-bound to the spreadsheet. Runtime V8, `timeZone: Asia/Jakarta` in `app
 | `Utils.gs` | Lead | shared helpers (logging, date helpers) |
 | `Menu.gs` | Lead | `onOpen` custom menu `SRE Tools` |
 | `Triggers.gs` | Lead | `installTriggers()`, `removeTriggers()` |
+| `Setup.gs` | Lead | `setupSheets()`, `setupForm()`, `setupProtections()`, `seedFakeData()`. Run from the editor only, never from the menu |
 | `Evaluations.gs` | Dev A | `onFormSubmitHandler`, `onEditHandler`, `openPeriod()` |
 | `Reports.gs` | Dev C | `generateReports(periodId)` |
 | `FormSync.gs` | Dev B | `syncForm()` |

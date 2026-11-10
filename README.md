@@ -31,7 +31,8 @@ This repo holds the Apps Script source and the technical docs derived from the P
 │   └── 04-work-order-template.md
 ├── tasks/                     one work order per task
 ├── src/                       Apps Script source (clasp rootDir)
-└── .github/PULL_REQUEST_TEMPLATE.md
+├── scripts/deploy-prod.sh     PROD deploy (lead only)
+└── .github/                   PR template, CODEOWNERS, CI
 ```
 
 ## Reading order
