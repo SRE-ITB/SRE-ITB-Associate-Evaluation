@@ -40,8 +40,8 @@ Never edit code in the Apps Script editor. It is not in git and the next `clasp 
 
 | Function | Event source | Event type | Who |
 | --- | --- | --- | --- |
-| `onFormSubmitHandler` | From spreadsheet | On form submit | Dev A |
-| `onEditHandler` | From spreadsheet | On edit | Dev A |
+| `onFormSubmitHandler` | From spreadsheet | On form submit | Juan |
+| `onEditHandler` | From spreadsheet | On edit | Juan |
 
 Do not install the daily `syncForm` and `dailyBirthday` triggers in DEV. Run those functions with Run instead of waiting for the morning.
 
@@ -49,9 +49,9 @@ Do not install the daily `syncForm` and `dailyBirthday` triggers in DEV. Run tho
 
 | Dev | In the DEV spreadsheet, Form, or Drive |
 | --- | --- |
-| A | Submit through the DEV Form (Form > Go to live form). Add your own email to `Admins` as `KW` with a division to test KW submissions (`seedFakeData` already adds you as `OM`). Test rejection from a second Gmail not in `Admins`. Test manual edits and multi-row pastes in `Evaluations!F:J`. Write the `Summary` formulas (A-02) in the template row, then copy them into `docs/01-architecture.md` section 2.5 |
-| B | After `syncForm`, open the DEV Form in edit mode to check each division dropdown. Never add, remove, or rename Form items by hand. Copy the poster templates into your DEV folder (a plain Slides file with the same placeholders until D-01 lands) and set `TEMPLATE_*`, `FOLDER_BIRTHDAY`, `FOLDER_BEST_STAFF` in DEV `Config` to your copies and your DEV `Output` folder. Set DEV `OM_EMAILS` to your own email. To test birthdays, set one fake `birth_date` to today and run `dailyBirthday` |
-| C | Before A-02 is merged, type fake `Summary` rows by hand following section 2.5. Write the `Leaderboard` formulas (C-01) with the period selector in `B1`, then copy them into `docs/01-architecture.md` section 2.6. Copy the report template into your DEV folder, set `TEMPLATE_REPORT` and `FOLDER_REPORTS` in DEV `Config`, generate from the menu, and check that no temporary Docs are left behind |
+| Juan (A) | Submit through the DEV Form (Form > Go to live form). Add your own email to `Admins` as `KW` with a division to test KW submissions (`seedFakeData` already adds you as `OM`). Test rejection from a second Gmail not in `Admins`. Test manual edits and multi-row pastes in `Evaluations!F:J`. Write the `Summary` formulas (A-02) in the template row, then copy them into `docs/01-architecture.md` section 2.5 |
+| Bayu (B) | After `syncForm`, open the DEV Form in edit mode to check each division dropdown. Never add, remove, or rename Form items by hand. Copy the poster templates into your DEV folder (a plain Slides file with the same placeholders until D-01 lands) and set `TEMPLATE_*`, `FOLDER_BIRTHDAY`, `FOLDER_BEST_STAFF` in DEV `Config` to your copies and your DEV `Output` folder. Set DEV `OM_EMAILS` to your own email. To test birthdays, set one fake `birth_date` to today and run `dailyBirthday` |
+| Karmel (C) | Before A-02 is merged, type fake `Summary` rows by hand following section 2.5. Write the `Leaderboard` formulas (C-01) with the period selector in `B1`, then copy them into `docs/01-architecture.md` section 2.6. Copy the report template into your DEV folder, set `TEMPLATE_REPORT` and `FOLDER_REPORTS` in DEV `Config`, generate from the menu, and check that no temporary Docs are left behind |
 
 Anything you change in a sheet or Form (formulas, validation, conditional formatting, protections, Form settings) is not in git. Record it in `docs/01-architecture.md` and under "Changes outside git" in the same PR.
 
