@@ -7,7 +7,7 @@ Lightweight on purpose: 5 people, one Apps Script project, a small CI that only 
 | Env | What | Who pushes code |
 | --- | --- | --- |
 | DEV | Copy of the spreadsheet + Form + bound script, fake data, one per dev | Each dev, to their own copy |
-| PROD | The real spreadsheet used by OM, owned by the org account | Lead only, after merge |
+| PROD | The real spreadsheet used by OM, in the Shared drive, bound script and triggers owned by the org account | Lead only, after merge |
 
 Never test against PROD. Never put real staff data in DEV.
 

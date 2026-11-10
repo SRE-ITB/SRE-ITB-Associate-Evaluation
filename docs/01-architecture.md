@@ -19,8 +19,10 @@ Daily trigger ──▶ Master birthdays ──▶ poster (Drive) + email to OM
 
 ## 1. Drive layout
 
+Lives in the Shared drive `SRE ITB 2026/2027`, under `MEDCOMM / IT DEVELOPMENT`. Files in a Shared drive belong to the drive, not to a person; the org account is a Manager of the drive (D-031). Access to a parent folder is inherited by everything below it, so check who can open `IT DEVELOPMENT` before `Master` holds real data.
+
 ```
-SRE Staff Evaluation 26-27/          owned by the org account
+SRE Associate Evaluation/            in the Shared drive, org account is Manager
 ├── System/                          spreadsheet (+ bound script), Form
 ├── Templates/                       Slides: birthday, best staff. Docs: report card
 ├── Output/
