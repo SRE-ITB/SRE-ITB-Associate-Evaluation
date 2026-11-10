@@ -18,7 +18,59 @@ Never test against PROD. Never put real staff data in DEV.
 3. `clasp login`.
 4. Clone the repo. Copy `.clasp.example.json` to `.clasp.json` and set `scriptId` to your DEV copy (Extensions > Apps Script > Project Settings > Script ID).
 5. `.clasp.json` is gitignored. Do not commit it.
-6. `clasp push`, then in your DEV spreadsheet fill the `Config` tab with `ENV = DEV` and run, from the Apps Script editor: `setupSheets()`, `seedFakeData()`, `setupForm()`. Running them again is safe.
+6. In the `DEV/` folder of the Shared drive, create a spreadsheet `DEV - <your name>` and a folder `DEV - <your name>/Output` for posters and report cards. Its script ID goes into `.clasp.json` (step 4).
+7. `clasp push`. In the Apps Script editor, pick `Setup.gs`, pick `setupSheets`, click Run. On the first run accept the authorization prompt (Advanced > Go to ... (unsafe) > Allow; normal for an unverified script of your own).
+8. In the `Config` tab set `ENV = DEV`, then run `seedFakeData()` and `setupForm()`. Reload the spreadsheet: the `SRE Tools` menu appears. Running any setup function again is safe.
+
+The same guide in Indonesian lives in the PRD tab "Cara Kerja Appscript".
+
+### 2.1 Daily loop outside VS Code
+
+1. Edit in VS Code, `clasp push`.
+2. Refresh the Apps Script editor tab so it loads the pushed code.
+3. Run the function you are working on (pick file and function in the toolbar, click Run). For menu functions, reload the spreadsheet and use `SRE Tools`.
+4. Read the Execution log under the editor. For trigger runs, open the Executions page (list icon in the left sidebar).
+5. Check the result in the DEV spreadsheet or Form and take one screenshot per `Done =` item.
+
+Never edit code in the Apps Script editor. It is not in git and the next `clasp push` overwrites it.
+
+### 2.2 Triggers in DEV
+
+`installTriggers()` is for PROD and the lead only. In DEV, add what you need by hand on the Triggers page (clock icon) > Add Trigger:
+
+| Function | Event source | Event type | Who |
+| --- | --- | --- | --- |
+| `onFormSubmitHandler` | From spreadsheet | On form submit | Dev A |
+| `onEditHandler` | From spreadsheet | On edit | Dev A |
+
+Do not install the daily `syncForm` and `dailyBirthday` triggers in DEV. Run those functions with Run instead of waiting for the morning.
+
+### 2.3 Per-dev work outside VS Code
+
+| Dev | In the DEV spreadsheet, Form, or Drive |
+| --- | --- |
+| A | Submit through the DEV Form (Form > Go to live form). Add your own email to `Admins` as `KW` with a division to test KW submissions (`seedFakeData` already adds you as `OM`). Test rejection from a second Gmail not in `Admins`. Test manual edits and multi-row pastes in `Evaluations!F:J`. Write the `Summary` formulas (A-02) in the template row, then copy them into `docs/01-architecture.md` section 2.5 |
+| B | After `syncForm`, open the DEV Form in edit mode to check each division dropdown. Never add, remove, or rename Form items by hand. Copy the poster templates into your DEV folder (a plain Slides file with the same placeholders until D-01 lands) and set `TEMPLATE_*`, `FOLDER_BIRTHDAY`, `FOLDER_BEST_STAFF` in DEV `Config` to your copies and your DEV `Output` folder. Set DEV `OM_EMAILS` to your own email. To test birthdays, set one fake `birth_date` to today and run `dailyBirthday` |
+| C | Before A-02 is merged, type fake `Summary` rows by hand following section 2.5. Write the `Leaderboard` formulas (C-01) with the period selector in `B1`, then copy them into `docs/01-architecture.md` section 2.6. Copy the report template into your DEV folder, set `TEMPLATE_REPORT` and `FOLDER_REPORTS` in DEV `Config`, generate from the menu, and check that no temporary Docs are left behind |
+
+Anything you change in a sheet or Form (formulas, validation, conditional formatting, protections, Form settings) is not in git. Record it in `docs/01-architecture.md` and under "Changes outside git" in the same PR.
+
+### 2.4 Never, in any copy
+
+- Open or change the PROD spreadsheet, Form, or script.
+- Run `installTriggers()`, push to PROD, or point `.clasp.json` at someone else's script.
+- Rename tabs, columns, or Form items. They are the contract the code reads.
+- Put file IDs, folder IDs, or emails in code. Use `Config`.
+- Send many emails while testing. Consumer Gmail has a daily recipient cap.
+- Copy real data from PROD into DEV.
+
+### 2.5 Resetting a DEV copy
+
+| Problem | Fix |
+| --- | --- |
+| Bad data | Delete rows 2 and below in the affected tab, run `seedFakeData()` again (it only fills empty tabs) |
+| Missing tab or header | Run `setupSheets()` again (adds what is missing, never deletes data) |
+| Everything broken | Create a new DEV spreadsheet and repeat steps 6 to 8 with the new script ID |
 
 ## 3. Flow for one task
 
