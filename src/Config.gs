@@ -17,7 +17,7 @@ const SHEETS = {
 // Row 1 headers, in column order. Form Responses and Leaderboard have no fixed headers.
 const HEADERS = {
   Config: ['key', 'value'],
-  Master: ['nim', 'name', 'division', 'email', 'birth_date', 'photo_file_id', 'active'],
+  Master: ['nim', 'name', 'division', 'email', 'birth_date', 'photo_file_id', 'active', 'evaluated'],
   Admins: ['email', 'name', 'role', 'division'],
   Evaluations: [
     'period_id', 'nim', 'name', 'division', 'role',

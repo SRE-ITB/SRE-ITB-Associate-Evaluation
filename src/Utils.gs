@@ -67,3 +67,13 @@ function normalizeEmail(email) {
 function isTruthyCell(value) {
   return value === true || String(value).trim().toUpperCase() === 'TRUE';
 }
+
+// Every active member gets a birthday poster (D-032).
+function isActiveMember(masterRecord) {
+  return isTruthyCell(masterRecord.active);
+}
+
+// Only active staff of the 13 evaluation groups are evaluated (D-013, D-032).
+function isEvaluatedStaff(masterRecord) {
+  return isActiveMember(masterRecord) && isTruthyCell(masterRecord.evaluated);
+}

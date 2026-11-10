@@ -76,11 +76,14 @@ Periods table at `Config!D1:G1` headers, data in named range `PERIODS` = `Config
 | --- | --- | --- |
 | A | `nim` | text, unique key |
 | B | `name` | |
-| C | `division` | exact value from `docs/00-scope.md` section 3 |
+| C | `division` | exact value from `docs/00-scope.md` section 3 when `evaluated` is TRUE. Free text otherwise (for example `Secretary`), shown on the birthday poster |
 | D | `email` | |
 | E | `birth_date` | date |
 | F | `photo_file_id` | Drive file ID readable by the org account |
-| G | `active` | TRUE/FALSE. Inactive staff are excluded everywhere |
+| G | `active` | TRUE/FALSE. Inactive members are excluded everywhere |
+| H | `evaluated` | TRUE/FALSE. TRUE only for staff of the 13 evaluation groups. FALSE for Kadiv/Wakadiv, General Secretariat units, and anyone else who only gets a birthday poster (D-032) |
+
+`Master` holds every SRE member. Use `isEvaluatedStaff(record)` (Form, `openPeriod`, `Summary`) and `isActiveMember(record)` (birthdays) from `Utils.gs` instead of checking the columns by hand.
 
 ### 2.3 `Admins`
 
@@ -106,7 +109,7 @@ Rows with `flag = IGNORED_OM_ROLE` are excluded from all formulas. `ROLE_MISMATC
 
 ### 2.5 `Summary`
 
-One row per active staff per period. Rows are created by `openPeriod()` (A-01). Columns:
+One row per evaluated staff (`active` and `evaluated` TRUE) per period. Rows are created by `openPeriod()` (A-01). Columns:
 
 | Col | Field |
 | --- | --- |

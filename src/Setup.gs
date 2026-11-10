@@ -44,9 +44,18 @@ function ensureHeaders(sheet, headers, a1) {
     sheet.setFrozenRows(1);
     return;
   }
-  if (current.join('|') !== headers.join('|')) {
+  let filled = current.length;
+  while (filled > 0 && current[filled - 1] === '') filled--;
+  const prefixMatches = current.slice(0, filled).join('|') === headers.slice(0, filled).join('|');
+  const tailEmpty = current.slice(filled).every(function (v) { return v === ''; });
+  if (!prefixMatches || !tailEmpty) {
     throw new Error('Header mismatch in "' + sheet.getName() + '": found [' + current.join(', ') +
       '], expected [' + headers.join(', ') + ']. Fix the sheet by hand; setupSheets never overwrites data');
+  }
+  // New columns are only ever added at the end, so older sheets get the missing tail headers.
+  if (filled < headers.length) {
+    range.offset(0, filled, 1, headers.length - filled)
+      .setValues([headers.slice(filled)]).setFontWeight('bold');
   }
 }
 
@@ -211,15 +220,24 @@ function seedMaster() {
         new Date(2005, seq % 12, (seq % 27) + 1),
         '',
         true,
+        true,
       ]);
     }
   });
+  // Members who get birthday posters but are never evaluated (D-032).
+  const lastSeq = rows.length;
+  rows.push(
+    [String(SEED_NIM_BASE + lastSeq + 1), 'Fake Kadiv', 'IT Development', 'kadiv@example.com',
+      new Date(2003, today.getMonth(), today.getDate()), '', true, false],
+    [String(SEED_NIM_BASE + lastSeq + 2), 'Fake Secretary', 'Secretary', 'secretary@example.com',
+      new Date(2004, 5, 10), '', true, false]
+  );
   // docs/00-scope.md section 8 fixtures, a birthday today, a Feb 29 birthday, and an inactive staff.
   rows[0][1] = 'Staff A';
   rows[1][1] = 'Staff B';
   rows[2][4] = new Date(2005, today.getMonth(), today.getDate());
   rows[3][4] = new Date(2004, 1, 29);
-  rows[rows.length - 1][6] = false;
+  rows[lastSeq - 1][6] = false;
   sheet.getRange(2, 1, rows.length, HEADERS.Master.length).setValues(rows);
 }
 
