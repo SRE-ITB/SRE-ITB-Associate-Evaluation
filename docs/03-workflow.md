@@ -58,7 +58,7 @@ Every PR to `main` runs `.github/workflows/ci.yml`. All checks must pass before 
 | `guardrails` | `src/` has `import`/`export`, a string that looks like a Drive ID, or an email address. `.clasp.json` is committed. `appsscript.json` is not `Asia/Jakarta` + `V8` |
 | `boundary` | A `feat/<ID>-*` or `fix/<ID>-*` branch changes a file not listed under `Files` in `tasks/<ID>.md` (`docs/01-architecture.md` and `tasks/<ID>.md` are always allowed) |
 | `pr-hygiene` | PR title is not a Conventional Commit, or the branch name does not follow section 4 |
-| `proof-of-work` | The PR description still contains `PROOF-PENDING`. Docs-only PRs write "docs only" under Proof instead |
+| `proof-of-work` | The PR changes a file under `src/` and its description still contains `PROOF-PENDING`. PRs that change nothing under `src/` skip this check |
 
 CI cannot check Apps Script behavior. The `Done =` screenshots remain the real test.
 

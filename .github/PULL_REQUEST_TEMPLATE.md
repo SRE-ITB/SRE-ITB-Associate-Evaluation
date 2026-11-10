@@ -28,8 +28,8 @@ None
 One #### heading per `Done =` item in the work order, in the same order.
 Put the screenshot or recording on its own line under the heading, replacing PROOF-PENDING.
 Capture it yourself from your DEV copy with fake data. Agents never fabricate proof.
-CI fails while PROOF-PENDING is left anywhere outside these comments.
-Docs-only PR: delete the headings below and write "docs only".
+If the PR changes anything under src/, CI fails while PROOF-PENDING is left anywhere outside these comments.
+PR with no change under src/: replace the headings below with "docs only" (CI skips the check).
 No tables in this section: dragging an image into a table cell breaks the layout.
 -->
 

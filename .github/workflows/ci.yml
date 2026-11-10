@@ -67,14 +67,22 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: No PROOF-PENDING left in the PR description
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
+          if ! git diff --name-only "origin/$BASE_REF"...HEAD | grep -q '^src/'; then
+            echo "No file under src/ changed. Proof of work not required."
+            exit 0
+          fi
           # Only visible text counts; the template's HTML comments mention the token.
           visible=$(printf '%s' "$PR_BODY" | perl -0pe 's/<!--.*?-->//gs')
           if printf '%s' "$visible" | grep -n 'PROOF-PENDING'; then
-            echo "::error::Replace every PROOF-PENDING with a screenshot you captured in your DEV copy, or write 'docs only' for a docs-only PR."
+            echo "::error::Replace every PROOF-PENDING with a screenshot you captured in your DEV copy."
             exit 1
           fi
           echo "Proof of work complete."
