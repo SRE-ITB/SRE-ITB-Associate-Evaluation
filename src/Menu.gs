@@ -6,6 +6,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('SRE Tools')
     .addItem('Show active period', 'showActivePeriod')
+    .addItem('Open active period', 'openPeriod')
     .addToUi();
 }
 
