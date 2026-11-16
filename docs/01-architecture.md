@@ -145,7 +145,43 @@ Formulas live in the spreadsheet, not in git. Any change to them must be reflect
 
 ### 2.6 `Leaderboard`
 
-A period selector cell at `Leaderboard!B1` (dropdown from `PERIODS`, the only admin-editable cell, constant `LEADERBOARD_PERIOD_SELECTOR_A1`) and one block per division using `SORT(FILTER(Summary...))` by `final_total` descending, showing name, total, average, status.
+Read-only ranking and evaluation progress view per division (13 division groups: 12 divisions with Education & Curriculum split into `E&C Research` and `E&C Product`, excludes Kadiv/Wakadiv and General Secretariat units). Owned by C-01.
+
+#### Layout & Controls
+
+| Range | Element | Notes |
+| --- | --- | --- |
+| `A1:B1` | Period selector (`Periode` in `A1`, dropdown value in `B1`) | Data validation: Dropdown from range `=Config!$D$2:$D` |
+| `A3:F16` | Division progress & Best Staff summary table | Header in row 3 (`Divisi`, `Total Associate`, `Sudah Dinilai`, `Progres`, `Status Divisi`, `Best Staff`); 13 fixed division names in `A4:A16` |
+| `A19:G100` | Associate ranking table | Header in row 19 (`Peringkat`, `Divisi`, `NIM`, `Nama`, `Total Skor`, `Rata-rata`, `Status`), dynamic spill rows starting at row 20 |
+
+#### Formulas
+
+Division summary table (entered in row 4 and dragged down to row 16):
+
+```excel
+B4  =COUNTIFS(Summary!$A$2:$A, $B$1, Summary!$D$2:$D, A4)
+C4  =COUNTIFS(Summary!$A$2:$A, $B$1, Summary!$D$2:$D, A4, Summary!$M$2:$M, TRUE)
+D4  =IF(B4=0, "0/0 (0%)", C4 & "/" & B4 & " (" & TEXT(C4/B4, "0%") & ")")
+E4  =IF(B4=0, "Tidak ada data", IF(C4=B4, "Lengkap", "Belum lengkap (" & (B4-C4) & " belum dinilai)"))
+F4  =IFERROR(TEXTJOIN(", ", TRUE, FILTER(Summary!$C$2:$C, Summary!$A$2:$A=$B$1, Summary!$D$2:$D=A4, REGEXMATCH(Summary!$P$2:$P, "^Best Staff"))) & IF(C4<B4, " (Sementara)", ""), "-")
+```
+
+Associate ranking table (dynamic array formulas in row 20):
+
+```excel
+A20 =MAP(B20:B100, E20:E100, G20:G100, LAMBDA(div, skor, st, IF(div="", "", IF(st="Belum lengkap", "-", COUNTIFS(B$20:B$100, div, E$20:E$100, ">"&skor, G$20:G$100, "<>Belum lengkap") + IF(REGEXMATCH(st, "^Best Staff"), 0, COUNTIFS(B$20:B$100, div, E$20:E$100, skor, G$20:G$100, "Best Staff*")) + 1))))
+B20 =IFERROR(SORT(FILTER({Summary!D2:D, Summary!B2:B, Summary!C2:C, Summary!K2:K, Summary!L2:L, Summary!P2:P}, Summary!A2:A=$B$1), 1, TRUE, 4, FALSE, 6, TRUE), "Tidak ada data untuk periode ini")
+```
+
+#### Data Validation & Conditional Formatting
+
+* **Data Validation (`B1`)**: Criteria `Dropdown (from a range)` referencing `=Config!$D$2:$D`.
+* **Conditional Formatting (`G20:G100`)**: `Text is exactly` `"Red Notice"` → light red fill, dark red bold text.
+* **Conditional Formatting (`G20:G100`)**: `Text starts with` `"Best Staff"` → light green/gold fill, dark bold text (covers both `Best Staff` and `Best Staff (Sementara)`).
+* **Conditional Formatting (`E4:E16, G20:G100`)**: `Text starts with` `"Belum lengkap"` → light gray/yellow fill.
+
+Formulas, data validation, and conditional formatting live in the spreadsheet, not in git. Any change to them must be reflected in this file in the same PR.
 
 ### 2.7 `BirthdayLog`
 
