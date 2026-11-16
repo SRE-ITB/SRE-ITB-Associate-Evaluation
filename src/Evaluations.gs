@@ -7,9 +7,10 @@ function onFormSubmitHandler(e) {
       throw new Error('onFormSubmitHandler requires a form submit event with namedValues');
     }
     const namedValues = e.namedValues;
-    const periodId = getSubmittedValue(namedValues, FORM_TITLES.PERIOD);
+    const periodId = getPeriod(getSubmittedValue(namedValues, FORM_TITLES.PERIOD)).periodId;
     const roleChoice = getSubmittedValue(namedValues, FORM_TITLES.ROLE);
-    const role = ROLE_BY_FORM_CHOICE[roleChoice] || roleChoice;
+    const role = ROLE_BY_FORM_CHOICE[roleChoice];
+    if (!role) throw new Error('Unknown evaluator role "' + roleChoice + '" in form submission');
     const staffField = findSubmittedStaffField(namedValues);
     const nim = staffField ? parseNim(staffField.label) : null;
 
@@ -249,6 +250,10 @@ function openPeriod(periodId) {
       const templateRange = sheet.getRange(2, formulaStartCol, 1, formulaColCount);
       const hasTemplateFormulas = templateRange.getFormulas()[0].some(Boolean);
       const copyStartRow = Math.max(3, startRow);
+      if (!hasTemplateFormulas) {
+        console.warn('openPeriod: Summary row 2 has no formulas in E:Q, so ' + rowsToWrite.length +
+          ' new rows for ' + targetPeriodId + ' have no scores. Add the template formulas (A-02) and fill them down');
+      }
 
       if (hasTemplateFormulas && endRow >= copyStartRow) {
         const destRange = sheet.getRange(copyStartRow, formulaStartCol, endRow - copyStartRow + 1, formulaColCount);
