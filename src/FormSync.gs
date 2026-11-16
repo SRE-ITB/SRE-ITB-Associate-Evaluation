@@ -2,6 +2,9 @@
 // Only updates choices on existing items. Never adds, removes, or renames items,
 // because that would change the column layout of the Form Responses sheet.
 
+/**
+ * Daily trigger and menu: refreshes the Period and Staff dropdowns from PERIODS and Master.
+ */
 function syncForm() {
   return runLogged('syncForm', function () {
     return withScriptLock(function () {

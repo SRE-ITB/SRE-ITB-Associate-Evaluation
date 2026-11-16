@@ -7,6 +7,7 @@ function onOpen() {
     .createMenu('SRE Tools')
     .addItem('Show active period', 'showActivePeriod')
     .addItem('Open active period', 'openPeriod')
+    .addItem('Sync Form', 'syncForm')
     .addToUi();
 }
 
