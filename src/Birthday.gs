@@ -6,6 +6,7 @@
  *   FOLDER_BIRTHDAY    ID folder "Birthday" (dibagikan ke OM, file mewarisi akses)
  *   OM_EMAILS          daftar email OM, dipisah koma
  * Sementara, kalau sel Config di atas kosong, dipakai Script Properties
+ * BIRTHDAY_TEMPLATE_ID / BIRTHDAY_ROOT_FOLDER_ID. Hapus fallback ini sebelum PR.
  *
  * Bergantung pada Config.gs: TIME_ZONE, SHEETS, HEADERS, COLS, getConfig(), getConfigList().
  * Kolom BirthdayLog: date, nim, poster_file_id, emailed_at.
@@ -78,6 +79,10 @@ function runBirthday_(today) {
       var folder = getOrCreateMonthFolder_(rootId, Utilities.formatDate(today, TIME_ZONE, 'yyyy-MM'));
       targets.forEach(function (m) {
         try {
+          // ID foto yang kosong atau tidak bisa dibaca dianggap gagal (bukan poster tanpa foto).
+          if (!m.photoId) {
+            throw new Error('photo_file_id kosong atau bukan ID/link Drive yang valid: "' + m.photoRaw + '"');
+          }
           var file = renderPoster(
             templateId,
             { '{{name}}': m.name, '{{division}}': m.division },
@@ -206,6 +211,7 @@ function readMaster_(ss) {
       name: String(r[c.name]).trim(),
       division: String(r[c.div]).trim(),
       birth: birth instanceof Date && !isNaN(birth) ? birth : null,
+      photoRaw: String(r[c.photo] || '').trim(),
       photoId: m ? m[0] : '',
       active: r[c.active] === true || String(r[c.active]).toUpperCase() === 'TRUE'
     };
@@ -242,15 +248,4 @@ function test_feb29() {
 function test_runWithFakeToday() {
   runBirthday_(new Date('2026-11-21T12:00:00+07:00'));
   // Jalankan lagi: harus tidak ada poster/email baru (dedup lewat BirthdayLog)
-}
-
-function debugPhotoElement() {
-  var id = getSetting_('TEMPLATE_BIRTHDAY', 'BIRTHDAY_TEMPLATE_ID');
-  var els = SlidesApp.openById(id).getSlides()[0].getPageElements();
-  els.forEach(function (e, i) {
-    Logger.log(i + ' ' + e.getPageElementType() +
-      ' title="' + e.getTitle() + '" desc="' + e.getDescription() + '"' +
-      ' L=' + Math.round(e.getLeft()) + ' T=' + Math.round(e.getTop()) +
-      ' W=' + Math.round(e.getWidth()) + ' H=' + Math.round(e.getHeight()));
-  });
 }
