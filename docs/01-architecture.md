@@ -249,6 +249,21 @@ Devs add their menu entries by editing `Menu.gs` in their PR. The lead reviews t
 - No hardcoded IDs, emails, or dates. Use `getConfig()`.
 - Fail loudly: log the error with context and rethrow. Do not swallow errors.
 
+### 4.2 Report Card Template Contract (`Reports.gs`)
+
+`generateReports(periodId)` clones the Google Docs template (`TEMPLATE_REPORT`), populates placeholders, exports `Rapot_<period_id>_<nim>_<name>.pdf` into `<FOLDER_REPORTS>/<period_id>/<division>/` (trashing any prior PDF for the same `<period_id>` and `<nim>`), and deletes the temporary Google Doc. Processes in batches up to 4 minutes and resumes via `PropertiesService` (`REPORTS_CURSOR_<period_id>`).
+
+| Placeholder | Source | Notes |
+| --- | --- | --- |
+| `{{nama}}` | `Summary.name` | Used in header field and intro paragraph |
+| `{{nim}}` | `Summary.nim` | |
+| `{{divisi}}` | `Summary.division` | |
+| `{{periode}}` | `PERIODS` (`label (period_id)`) | Resolved via `getPeriod(periodId)` |
+| `{{i1}}`..`{{i4}}` | `Summary.final_i1`..`final_i4` | Shows `-` when `complete` is `FALSE` |
+| `{{skor_akhir}}` | `Summary.final_total` | Total score (max 20), or `-` when incomplete |
+| `{{status}}` | `Summary.status` | Rendered bold with status-specific font color (`Red Notice`, `Best Staff`, `Normal`, `Incomplete` / `Belum lengkap`) |
+| `{{catatan}}` | `Evaluations.comment` | Placed inside a table cell; cloned per valid row (excludes `IGNORED_OM_ROLE`), rendered anonymously without evaluator name or role |
+
 ## 5. Triggers
 
 Installed only from the org account by the lead (L-04). Triggers run as the account that installed them.
