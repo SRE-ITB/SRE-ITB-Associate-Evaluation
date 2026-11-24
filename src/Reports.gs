@@ -6,113 +6,141 @@ const REPORT_CURSOR_PREFIX = 'REPORTS_CURSOR_';
  */
 function generateReports(periodId) {
   runLogged('generateReports', function () {
-    const startTime = Date.now();
-    const targetPeriodId = String(periodId || getConfigValue('ACTIVE_PERIOD')).trim();
-    const period = getPeriod(targetPeriodId);
+    withScriptLock(function () {
+      const startTime = Date.now();
+      const targetPeriodId = String(periodId || getConfigValue('ACTIVE_PERIOD')).trim();
+      const period = getPeriod(targetPeriodId);
 
-    const rootFolderId = getConfigValue('FOLDER_REPORTS');
-    const templateId = getConfigValue('TEMPLATE_REPORT');
+      const rootFolderId = getConfigValue('FOLDER_REPORTS');
+      const templateId = getConfigValue('TEMPLATE_REPORT');
 
-    const rootFolder = DriveApp.getFolderById(rootFolderId);
-    const templateFile = DriveApp.getFileById(templateId);
+      const rootFolder = DriveApp.getFolderById(rootFolderId);
+      const templateFile = DriveApp.getFileById(templateId);
 
-    const summaryRows = readTable(SHEETS.SUMMARY)
-      .filter(function (row) {
-        return String(row.period_id || '').trim() === targetPeriodId &&
-          String(row.nim || '').trim() !== '';
-      })
-      .sort(function (a, b) {
-        const divCmp = String(a.division || '').localeCompare(String(b.division || ''));
-        if (divCmp !== 0) return divCmp;
-        return String(a.nim || '').localeCompare(String(b.nim || ''));
-      });
+      const periodSummaryRows = readTable(SHEETS.SUMMARY)
+        .filter(function (row) {
+          return String(row.period_id || '').trim() === targetPeriodId &&
+            String(row.nim || '').trim() !== '';
+        })
+        .sort(function (a, b) {
+          const divCmp = String(a.division || '').localeCompare(String(b.division || ''));
+          if (divCmp !== 0) return divCmp;
+          return String(a.nim || '').localeCompare(String(b.nim || ''));
+        });
 
-    if (summaryRows.length === 0) {
-      notifyReportStatus(
-        'Generate Reports',
-        'Tidak ada data di tab ' + SHEETS.SUMMARY + ' untuk periode ' + targetPeriodId + '.'
-      );
-      return;
-    }
-
-    const commentsByNim = groupCommentsByNim(targetPeriodId);
-    const periodFolder = getOrCreateSubfolder(rootFolder, targetPeriodId);
-    const divisionFolderCache = {};
-
-    const props = PropertiesService.getScriptProperties();
-    const cursorKey = REPORT_CURSOR_PREFIX + targetPeriodId;
-    const lastProcessedNim = props.getProperty(cursorKey);
-
-    let startIndex = 0;
-    if (lastProcessedNim) {
-      const foundIndex = summaryRows.findIndex(function (r) {
-        return String(r.nim).trim() === lastProcessedNim;
-      });
-      if (foundIndex !== -1 && foundIndex + 1 < summaryRows.length) {
-        startIndex = foundIndex + 1;
-      }
-    }
-
-    const periodDisplay = period.label
-      ? String(period.label).trim() + ' (' + targetPeriodId + ')'
-      : targetPeriodId;
-
-    let generatedCount = 0;
-
-    for (let i = startIndex; i < summaryRows.length; i++) {
-      if (Date.now() - startTime > REPORT_BATCH_MAX_MS) {
-        const pausedNim = String(summaryRows[i - 1].nim).trim();
-        props.setProperty(cursorKey, pausedNim);
-        const remaining = summaryRows.length - i;
-        notifyReportStatus(
-          'Generate Reports (Batch Paused)',
-          'Berhasil membuat ' + generatedCount + ' rapot PDF untuk periode ' + targetPeriodId + '.\n' +
-          'Tersisa ' + remaining + ' associate lagi karena mendekati batas waktu eksekusi.\n\n' +
-          'Jalankan kembali "SRE Tools > Generate reports" untuk melanjutkan otomatis.'
-        );
+      if (periodSummaryRows.length === 0) {
+        const emptyMsg = 'Tidak ada data di tab ' + SHEETS.SUMMARY + ' untuk periode ' + targetPeriodId + '.';
+        notifyReportStatus('Generate Reports', emptyMsg, emptyMsg);
         return;
       }
 
-      const row = summaryRows[i];
-      const nim = String(row.nim).trim();
-      const name = String(row.name || '').trim();
-      const division = String(row.division || 'Uncategorized').trim();
-
-      if (!divisionFolderCache[division]) {
-        divisionFolderCache[division] = getOrCreateSubfolder(periodFolder, division);
-      }
-      const divisionFolder = divisionFolderCache[division];
-
-      const comments = commentsByNim[nim] && commentsByNim[nim].length > 0
-        ? commentsByNim[nim]
-        : ['Belum ada catatan evaluasi.'];
-
-      createSingleReportPdf(templateFile, divisionFolder, {
-        periodId: targetPeriodId,
-        periodDisplay: periodDisplay,
-        nim: nim,
-        name: name,
-        division: division,
-        complete: isTruthyCell(row.complete),
-        i1: row.final_i1,
-        i2: row.final_i2,
-        i3: row.final_i3,
-        i4: row.final_i4,
-        total: row.final_total,
-        avg: row.final_avg,
-        status: String(row.status || '').trim() || STATUSES.INCOMPLETE,
-        comments: comments,
+      const eligibleRows = periodSummaryRows.filter(function (row) {
+        return isTruthyCell(row.complete);
       });
+      const skippedCount = periodSummaryRows.length - eligibleRows.length;
 
-      generatedCount++;
-    }
+      if (eligibleRows.length === 0) {
+        const noneMsg = 'Dibuat 0, dilewati ' + skippedCount + ' (belum lengkap).';
+        notifyReportStatus('Generate Reports', noneMsg, noneMsg);
+        return;
+      }
 
-    props.deleteProperty(cursorKey);
-    notifyReportStatus(
-      'Generate Reports Selesai',
-      'Berhasil membuat ' + generatedCount + ' rapot PDF untuk periode ' + targetPeriodId + '.\n' +
-      'Lokasi: folder Output / ' + targetPeriodId + ' / <Divisi>.'
-    );
+      const props = PropertiesService.getScriptProperties();
+      const cursorKey = REPORT_CURSOR_PREFIX + targetPeriodId;
+      const lastProcessedNim = props.getProperty(cursorKey);
+
+      let startIndex = 0;
+      if (lastProcessedNim) {
+        const foundIndex = eligibleRows.findIndex(function (r) {
+          return String(r.nim).trim() === lastProcessedNim;
+        });
+        if (foundIndex !== -1) {
+          if (foundIndex + 1 >= eligibleRows.length) {
+            props.deleteProperty(cursorKey);
+            const doneMsg = 'Semua rapor complete untuk periode ' + targetPeriodId +
+              ' sudah selesai diproses. Dilewati ' + skippedCount + ' (belum lengkap).';
+            notifyReportStatus('Generate Reports', doneMsg, doneMsg);
+            return;
+          }
+          startIndex = foundIndex + 1;
+        } else {
+          props.deleteProperty(cursorKey);
+        }
+      }
+
+      const commentsByNim = groupCommentsByNim(targetPeriodId);
+      const periodFolder = getOrCreateSubfolder(rootFolder, targetPeriodId);
+      const divisionFolderCache = {};
+
+      const periodDisplay = period.label
+        ? String(period.label).trim() + ' (' + targetPeriodId + ')'
+        : targetPeriodId;
+
+      let generatedCount = 0;
+
+      for (let i = startIndex; i < eligibleRows.length; i++) {
+        if (Date.now() - startTime > REPORT_BATCH_MAX_MS) {
+          if (i > startIndex) {
+            const pausedNim = String(eligibleRows[i - 1].nim).trim();
+            props.setProperty(cursorKey, pausedNim);
+          }
+          const remaining = eligibleRows.length - i;
+          const batchSummary = 'Dibuat ' + generatedCount + ', dilewati ' + skippedCount +
+            ' (belum lengkap), tersisa ' + remaining + ' lagi.';
+          notifyReportStatus(
+            'Generate Reports (Batch Paused)',
+            batchSummary + '\n\nMendekati batas waktu eksekusi. Jalankan kembali "SRE Tools > Generate reports" untuk melanjutkan otomatis.',
+            batchSummary
+          );
+          return;
+        }
+
+        const row = eligibleRows[i];
+        const nim = String(row.nim).trim();
+        const name = String(row.name || '').trim();
+        const division = String(row.division || '').trim();
+
+        if (!division) {
+          throw new Error('Baris Summary untuk NIM ' + nim + ' (' + targetPeriodId + ') tidak memiliki division.');
+        }
+        if (!name) {
+          throw new Error('Baris Summary untuk NIM ' + nim + ' (' + targetPeriodId + ') tidak memiliki name.');
+        }
+
+        if (!divisionFolderCache[division]) {
+          divisionFolderCache[division] = getOrCreateSubfolder(periodFolder, division);
+        }
+        const divisionFolder = divisionFolderCache[division];
+
+        const comments = commentsByNim[nim] || [];
+
+        createSingleReportPdf(templateFile, rootFolder, divisionFolder, {
+          periodId: targetPeriodId,
+          periodDisplay: periodDisplay,
+          nim: nim,
+          name: name,
+          division: division,
+          i1: row.final_i1,
+          i2: row.final_i2,
+          i3: row.final_i3,
+          i4: row.final_i4,
+          total: row.final_total,
+          average: row.final_avg,
+          status: String(row.status || '').trim(),
+          comments: comments,
+        });
+
+        generatedCount++;
+      }
+
+      props.deleteProperty(cursorKey);
+      const summaryText = 'Dibuat ' + generatedCount + ', dilewati ' + skippedCount + ' (belum lengkap).';
+      notifyReportStatus(
+        'Generate Reports Selesai',
+        summaryText + '\nLokasi: Output/Reports/' + targetPeriodId + '/<Divisi>/.',
+        summaryText
+      );
+    });
   });
 }
 
@@ -132,77 +160,56 @@ function groupCommentsByNim(periodId) {
     map[nim].push(comment);
   });
 
+  Object.keys(map).forEach(function (nim) {
+    map[nim].sort(function (a, b) {
+      return a.localeCompare(b, 'id');
+    });
+  });
+
   return map;
 }
 
-function createSingleReportPdf(templateFile, divisionFolder, data) {
+function reportStatusText(status) {
+  if (status === STATUSES.BEST_STAFF || status === STATUSES.RED_NOTICE) return status;
+  return '';
+}
+
+function createSingleReportPdf(templateFile, tempParentFolder, divisionFolder, data) {
   const safeName = sanitizeFileName(data.name);
   const safeNim = sanitizeFileName(data.nim);
   const safePeriod = sanitizeFileName(data.periodId);
 
-  const pdfFileName = 'Rapot_' + safePeriod + '_' + safeNim + '_' + safeName + '.pdf';
+  const pdfFileName = safeNim + ' - ' + safeName + '.pdf';
   const tempDocName = 'TEMP_Rapot_' + safePeriod + '_' + safeNim + '_' + Date.now();
 
-  const tempDocFile = templateFile.makeCopy(tempDocName, divisionFolder);
+  const tempDocFile = templateFile.makeCopy(tempDocName, tempParentFolder);
 
   try {
     const doc = DocumentApp.openById(tempDocFile.getId());
     const body = doc.getBody();
 
-    const skorAkhirText = data.complete
-      ? formatScoreValue(data.total)
-      : '-';
-
-    replaceTemplateTag(body, 'nama', data.name);
+    replaceTemplateTag(body, 'name', data.name);
     replaceTemplateTag(body, 'nim', data.nim);
-    replaceTemplateTag(body, 'divisi', data.division);
-    replaceTemplateTag(body, 'periode', data.periodDisplay);
-    replaceTemplateTag(body, 'i1', data.complete ? formatScoreValue(data.i1) : '-');
-    replaceTemplateTag(body, 'i2', data.complete ? formatScoreValue(data.i2) : '-');
-    replaceTemplateTag(body, 'i3', data.complete ? formatScoreValue(data.i3) : '-');
-    replaceTemplateTag(body, 'i4', data.complete ? formatScoreValue(data.i4) : '-');
-    replaceTemplateTag(body, 'skor_akhir', skorAkhirText);
-    applyStatusTag(body, data.status);
-
-    populateCommentsTable(body, data.comments);
+    replaceTemplateTag(body, 'division', data.division);
+    replaceTemplateTag(body, 'period', data.periodDisplay);
+    replaceTemplateTag(body, 'i1', formatScoreValue(data.i1));
+    replaceTemplateTag(body, 'i2', formatScoreValue(data.i2));
+    replaceTemplateTag(body, 'i3', formatScoreValue(data.i3));
+    replaceTemplateTag(body, 'i4', formatScoreValue(data.i4));
+    replaceTemplateTag(body, 'total', formatScoreValue(data.total));
+    replaceTemplateTag(body, 'average', formatScoreValue(data.average));
+    replaceTemplateTag(body, 'status', reportStatusText(data.status));
+    replaceTemplateTag(body, 'comments', data.comments.join('\n'));
 
     doc.saveAndClose();
 
-    trashExistingReportPdfs(divisionFolder, safePeriod, safeNim);
+    trashExistingReportPdfs(divisionFolder, safeNim);
 
     const pdfBlob = tempDocFile.getAs(MimeType.PDF).setName(pdfFileName);
     divisionFolder.createFile(pdfBlob);
   } finally {
     tempDocFile.setTrashed(true);
   }
-}
-
-function populateCommentsTable(body, comments) {
-  const tables = body.getTables();
-  for (let t = 0; t < tables.length; t++) {
-    const table = tables[t];
-    for (let r = 0; r < table.getNumRows(); r++) {
-      const row = table.getRow(r);
-      for (let c = 0; c < row.getNumCells(); c++) {
-        const cell = row.getCell(c);
-        if (cell.getText().indexOf('{{catatan}}') !== -1) {
-          cell.setText(comments[0]);
-          for (let k = 1; k < comments.length; k++) {
-            const clonedRow = row.copy();
-            clonedRow.getCell(c).setText(comments[k]);
-            table.insertTableRow(r + k, clonedRow);
-          }
-          return;
-        }
-      }
-    }
-  }
-
-  replaceTemplateTag(
-    body,
-    'catatan',
-    comments.map(function (c) { return '- ' + c; }).join('\n')
-  );
 }
 
 function replaceTemplateTag(body, tagName, value) {
@@ -213,51 +220,10 @@ function replaceTemplateTag(body, tagName, value) {
   body.replaceText(pattern, safeReplacement);
 }
 
-function applyStatusTag(body, statusValue) {
-  const statusText = String(statusValue || '').trim() || STATUSES.INCOMPLETE;
-  const color = getStatusFontColor(statusText);
-
-  let found = body.findText('\\{\\{status\\}\\}');
-  while (found) {
-    const textEl = found.getElement().asText();
-    const start = found.getStartOffset();
-    const end = found.getEndOffsetInclusive();
-
-    textEl.deleteText(start, end);
-    textEl.insertText(start, statusText);
-
-    if (statusText.length > 0) {
-      const newEnd = start + statusText.length - 1;
-      textEl.setForegroundColor(start, newEnd, color);
-      textEl.setBold(start, newEnd, true);
-    }
-
-    found = body.findText('\\{\\{status\\}\\}');
-  }
-}
-
-function getStatusFontColor(statusText) {
-  const normalized = String(statusText || '').trim().toLowerCase();
-
-  if (normalized === 'red notice') {
-    return '#DC2626'; // Merah
-  }
-  if (normalized.indexOf('best staff') === 0) {
-    return '#15803D'; // Hijau tua
-  }
-  if (normalized === 'belum lengkap' || normalized === 'incomplete') {
-    return '#D97706'; // Oranye / amber
-  }
-  if (normalized === 'normal') {
-    return '#000000'; // Hitam
-  }
-  return '#374151'; // Abu-abu gelap
-}
-
 function formatScoreValue(value) {
   const num = Number(value);
-  if (isNaN(num)) return String(value || '-');
-  return String(Number(num.toFixed(2)));
+  if (isNaN(num)) return String(value || '');
+  return (Math.round(num * 10 + 1e-9) / 10).toFixed(1);
 }
 
 function getOrCreateSubfolder(parentFolder, folderName) {
@@ -266,8 +232,8 @@ function getOrCreateSubfolder(parentFolder, folderName) {
   return parentFolder.createFolder(folderName);
 }
 
-function trashExistingReportPdfs(folder, safePeriod, safeNim) {
-  const prefix = 'Rapot_' + safePeriod + '_' + safeNim + '_';
+function trashExistingReportPdfs(folder, safeNim) {
+  const prefix = safeNim + ' - ';
   const files = folder.getFiles();
   while (files.hasNext()) {
     const file = files.next();
@@ -284,10 +250,19 @@ function sanitizeFileName(name) {
     .trim();
 }
 
-function notifyReportStatus(title, message) {
-  console.log('[' + title + '] ' + message);
+function notifyReportStatus(title, alertMessage, toastMessage) {
+  console.log('[' + title + '] ' + alertMessage);
+  const ss = SpreadsheetApp.getActive();
+  if (ss) {
+    try {
+      ss.toast(toastMessage || alertMessage, title, 8);
+    } catch (e) {
+      console.warn('[notifyReportStatus] Toast skipped: ' + (e && e.message ? e.message : e));
+    }
+  }
   try {
-    SpreadsheetApp.getUi().alert(title, message, SpreadsheetApp.getUi().ButtonSet.OK);
+    SpreadsheetApp.getUi().alert(title, alertMessage, SpreadsheetApp.getUi().ButtonSet.OK);
   } catch (e) {
+    console.warn('[notifyReportStatus] UI alert skipped: ' + (e && e.message ? e.message : e));
   }
 }
