@@ -160,7 +160,7 @@ N2  =IF(NOT($M2), "Incomplete",
 O2  Checkbox (unchecked = FALSE)
 P2  =IF($N2<>"Tie", $N2,
         IF(COUNTIFS($A:$A, $A2, $D:$D, $D2, $N:$N, "Tie", $O:$O, TRUE)=1,
-          IF($O2, "Best Staff", "Normal"),
+          IF($O2, IF($Q2, "Best Staff", "Best Staff (Sementara)"), "Normal"),
           "Tie"))
 Q2  =COUNTIFS($A:$A, $A2, $D:$D, $D2, $M:$M, FALSE) = 0
 ```
