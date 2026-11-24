@@ -1,10 +1,5 @@
 {
   "timeZone": "Asia/Jakarta",
   "exceptionLogging": "STACKDRIVER",
-  "runtimeVersion": "V8",
-  "dependencies": {
-    "enabledAdvancedServices": [
-      { "userSymbol": "Slides", "serviceId": "slides", "version": "v1" }
-    ]
-  }
+  "runtimeVersion": "V8"
 }
