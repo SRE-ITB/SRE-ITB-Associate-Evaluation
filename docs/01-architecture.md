@@ -125,19 +125,47 @@ One row per evaluated staff (`active` and `evaluated` TRUE) per period. Rows are
 | P | `status` (final, after override) |
 | Q | `division_complete` |
 
-Formula sketches (A-02 owns the final versions and must keep this section in sync):
+Template row formulas (row 2, owned by A-02):
 
 ```
-E2  =COUNTIFS(Evaluations!A:A,$A2, Evaluations!B:B,$B2, Evaluations!E:E,"KW", Evaluations!N:N,"<>IGNORED_OM_ROLE")>0
+E2  =COUNTIFS(Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "KW", Evaluations!$N:$N, "<>IGNORED_OM_ROLE") > 0
 F2  =IF($D2="Organizational Management", TRUE,
-        COUNTIFS(Evaluations!A:A,$A2, Evaluations!B:B,$B2, Evaluations!E:E,"OM", Evaluations!N:N,"<>IGNORED_OM_ROLE")>0)
-G2  =IF($D2="Organizational Management", kw_i1, 0.6*kw_i1 + 0.4*om_i1)
+        COUNTIFS(Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "OM", Evaluations!$N:$N, "<>IGNORED_OM_ROLE") > 0)
+G2  =IF($D2="Organizational Management",
+        SUMIFS(Evaluations!F:F, Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "KW", Evaluations!$N:$N, "<>IGNORED_OM_ROLE"),
+        0.6*SUMIFS(Evaluations!F:F, Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "KW", Evaluations!$N:$N, "<>IGNORED_OM_ROLE") +
+        0.4*SUMIFS(Evaluations!F:F, Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "OM", Evaluations!$N:$N, "<>IGNORED_OM_ROLE"))
+H2  =IF($D2="Organizational Management",
+        SUMIFS(Evaluations!G:G, Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "KW", Evaluations!$N:$N, "<>IGNORED_OM_ROLE"),
+        0.6*SUMIFS(Evaluations!G:G, Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "KW", Evaluations!$N:$N, "<>IGNORED_OM_ROLE") +
+        0.4*SUMIFS(Evaluations!G:G, Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "OM", Evaluations!$N:$N, "<>IGNORED_OM_ROLE"))
+I2  =IF($D2="Organizational Management",
+        SUMIFS(Evaluations!H:H, Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "KW", Evaluations!$N:$N, "<>IGNORED_OM_ROLE"),
+        0.6*SUMIFS(Evaluations!H:H, Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "KW", Evaluations!$N:$N, "<>IGNORED_OM_ROLE") +
+        0.4*SUMIFS(Evaluations!H:H, Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "OM", Evaluations!$N:$N, "<>IGNORED_OM_ROLE"))
+J2  =IF($D2="Organizational Management",
+        SUMIFS(Evaluations!I:I, Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "KW", Evaluations!$N:$N, "<>IGNORED_OM_ROLE"),
+        0.6*SUMIFS(Evaluations!I:I, Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "KW", Evaluations!$N:$N, "<>IGNORED_OM_ROLE") +
+        0.4*SUMIFS(Evaluations!I:I, Evaluations!$A:$A, $A2, Evaluations!$B:$B, $B2, Evaluations!$E:$E, "OM", Evaluations!$N:$N, "<>IGNORED_OM_ROLE"))
 K2  =ROUND(SUM(G2:J2), 4)
 L2  =K2/4
 M2  =AND(E2, F2)
+N2  =IF(NOT($M2), "Incomplete",
+        IF($L2<=2, "Red Notice",
+          IF($K2=MAXIFS($K:$K, $A:$A, $A2, $D:$D, $D2, $M:$M, TRUE, $L:$L, ">2"),
+            IF(COUNTIFS($A:$A, $A2, $D:$D, $D2, $M:$M, TRUE, $L:$L, ">2", $K:$K, $K2)>1,
+              "Tie",
+              IF($Q2, "Best Staff", "Best Staff (Sementara)")),
+            "Normal")))
+O2  Checkbox (unchecked = FALSE)
+P2  =IF($N2<>"Tie", $N2,
+        IF(COUNTIFS($A:$A, $A2, $D:$D, $D2, $N:$N, "Tie", $O:$O, TRUE)=1,
+          IF($O2, IF($Q2, "Best Staff", "Best Staff (Sementara)"), "Normal"),
+          "Tie"))
+Q2  =COUNTIFS($A:$A, $A2, $D:$D, $D2, $M:$M, FALSE) = 0
 ```
 
-`kw_i1` and `om_i1` are lookups on `Evaluations` filtered by period, nim, role, and flag. Status order follows `docs/00-scope.md` section 8.
+`G2:J2` look up `i1`..`i4` (`Evaluations!F:I`) filtered by `period_id`, `nim`, `role`, and `flag <> IGNORED_OM_ROLE`. Status order follows `docs/00-scope.md` section 8.
 
 `tie_override` is a checkbox in the template row (A-02), not a column-wide validation: empty checkboxes hold FALSE and would make `getLastRow()` count every row.
 
