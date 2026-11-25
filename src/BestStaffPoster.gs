@@ -117,8 +117,8 @@ function generateBestStaffPostersActive() {
 }
 
 /** Menu: generate untuk ACTIVE_PERIOD, konfirmasi dulu, lalu tampilkan ringkasan. */
-function generateBestStaffPostersMenu() {
-  runLogged('generateBestStaffPostersMenu', function () {
+function bestStaffPostersMenu() {
+  runLogged('bestStaffPostersMenu', function () {
     var ui = SpreadsheetApp.getUi();
     var period = getPeriod(getConfigValue('ACTIVE_PERIOD'));
 

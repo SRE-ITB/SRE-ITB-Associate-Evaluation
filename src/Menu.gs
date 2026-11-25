@@ -9,7 +9,7 @@ function onOpen() {
     .addItem('Open active period', 'openPeriod')
     .addItem('Sync Form', 'syncForm')
     .addItem('Generate reports', 'generateReports')
-    .addItem('Generate Best Staff posters', 'generateBestStaffPostersMenu')
+    .addItem('Generate Best Staff posters', 'bestStaffPostersMenu')
     .addToUi();
 }
 
