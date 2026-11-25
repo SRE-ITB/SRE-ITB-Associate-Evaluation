@@ -277,6 +277,22 @@ Devs add their menu entries by editing `Menu.gs` in their PR. The lead reviews t
 - No hardcoded IDs, emails, or dates. Use `getConfig()`.
 - Fail loudly: log the error with context and rethrow. Do not swallow errors.
 
+### 4.2 Report Card Template Contract (`Reports.gs`)
+
+`generateReports(periodId)` generates PDF report cards only for `Summary` rows where `complete` is `TRUE` (skipping and counting incomplete rows). It clones `TEMPLATE_REPORT` into `FOLDER_REPORTS`, populates placeholders, exports `<nim> - <name>.pdf` into `<FOLDER_REPORTS>/<period_id>/<division>/` (trashing any prior PDF for the same `<nim>`), and deletes the temporary Google Doc. Wrapped in `withScriptLock()`; processes in batches up to 4 minutes and resumes via `PropertiesService` (`REPORTS_CURSOR_<period_id>`).
+
+| Placeholder | Source | Notes |
+| --- | --- | --- |
+| `{{name}}` | `Summary.name` | Used in header field and intro paragraph |
+| `{{nim}}` | `Summary.nim` | |
+| `{{division}}` | `Summary.division` | |
+| `{{period}}` | `PERIODS` (`label (period_id)`) | Resolved via `getPeriod(periodId)` |
+| `{{i1}}`..`{{i4}}` | `Summary.final_i1`..`final_i4` | Formatted to 1 decimal place |
+| `{{total}}` | `Summary.final_total` | Formatted to 1 decimal place |
+| `{{average}}` | `Summary.final_avg` | Formatted to 1 decimal place (`ROUND` half-up parity) |
+| `{{status}}` | `Summary.status` | `Best Staff` or `Red Notice` only; blank for all other statuses |
+| `{{comments}}` | `Evaluations.comment` | Placed in its own paragraph; excludes `IGNORED_OM_ROLE`, sorted alphabetically (`id` locale), joined by newlines without evaluator names or roles |
+
 ## 5. Triggers
 
 Installed only from the org account by the lead (L-04). Triggers run as the account that installed them.
